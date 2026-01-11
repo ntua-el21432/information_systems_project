@@ -1,0 +1,64 @@
+version: "3.8"
+
+services:
+  # FastAPI Backend
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: llmsql2_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app/app
+      - ./data:/app/data
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=llmsql2_db
+      - SQLITE_PATH=/app/data/sqlite.db
+      - OLLAMA_BASE_URL=http://ollama:11434
+    depends_on:
+      - postgres
+      - ollama
+    networks:
+      - llmsql2_network
+
+  # Ollama for TinyLlama and GPT-OSS
+  ollama:
+    image: ollama/ollama:latest
+    container_name: llmsql2_ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - llmsql2_network
+    # Note: Models need to be pulled manually after container starts
+    # Run: docker exec llmsql2_ollama ollama pull tinyllama
+    # Run: docker exec llmsql2_ollama ollama pull gpt-oss
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: llmsql2_postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=llmsql2_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - llmsql2_network
+
+volumes:
+  ollama_data:
+  postgres_data:
+
+networks:
+  llmsql2_network:
+    driver: bridge
