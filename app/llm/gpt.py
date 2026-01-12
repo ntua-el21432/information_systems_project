@@ -1,9 +1,13 @@
 import ollama
 from app.config import settings
-from typing import Optional
+from typing import Optional, List, Dict
 
 
-async def generate_sql_gpt(text: str, schema_info: Optional[str] = None) -> str:
+async def generate_sql_gpt(
+    text: str,
+    schema_info: Optional[str] = None,
+    examples: Optional[List[Dict[str, str]]] = None,
+) -> str:
     """
     Generate SQL query from natural language text using GPT-OSS via Ollama.
     
@@ -17,15 +21,30 @@ async def generate_sql_gpt(text: str, schema_info: Optional[str] = None) -> str:
     # Initialize Ollama client with custom base URL if needed
     client = ollama.Client(host=settings.ollama_base_url)
     
-    prompt = f"""Convert the following natural language query to SQL.
-
-"""
+    prompt = (
+        "You are a senior SQL expert.\n"
+        "Generate ONE SQL statement that answers the question.\n"
+        "Rules:\n"
+        "- Use ONLY the tables/columns listed in the schema.\n"
+        "- Do NOT invent table or column names.\n"
+        "- Do NOT prefix tables with schema names; use plain table names.\n"
+        "- Prefer ANSI JOINs.\n"
+        "- Return ONLY the SQL (no markdown or commentary).\n"
+    )
     
     if schema_info:
-        prompt += f"Database schema:\n{schema_info}\n\n"
+        prompt += f"\nSchema:\n{schema_info}\n"
+
+    if examples:
+        prompt += "\nExample pairs of question -> SQL:\n"
+        for ex in examples:
+            q = ex.get("question", "").strip()
+            s = ex.get("sql", "").strip()
+            if q and s:
+                prompt += f"- Q: {q}\n  SQL: {s}\n"
+        prompt += "\nUse the same table/column names; do not invent schemas or prefixes.\n"
     
-    prompt += f"Natural language query: {text}\n\n"
-    prompt += "Generate only the SQL query, without any explanation:"
+    prompt += f"\nQuestion: {text}\nSQL:"
     
     try:
         response = client.chat(

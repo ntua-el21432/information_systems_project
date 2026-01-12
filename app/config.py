@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     
     # SQLite settings
     sqlite_path: str = "./data/sqlite.db"
+
+    # Optional schema description file (CSV) used to guide text-to-SQL models
+    schema_csv_path: str = "./datasets/restaurants-schema.csv"
     
     # Ollama settings
     ollama_base_url: str = "http://localhost:11434"
