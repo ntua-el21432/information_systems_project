@@ -11,6 +11,9 @@ RUN pip install --no-cache-dir uv
 # Set working directory
 WORKDIR /app
 
+# Ensure the application package is importable
+ENV PYTHONPATH=/app
+
 # Copy dependency files
 COPY pyproject.toml ./
 
